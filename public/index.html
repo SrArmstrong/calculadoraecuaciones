@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>Dynamic Input Form</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <script>
+        function validateNonZero(input) {
+            if (input.value == 0) {
+                input.setCustomValidity('El valor no puede ser 0.');
+            } else {
+                input.setCustomValidity(''); // Restablecer el mensaje de error si el valor es válido
+            }
+        }
+        </script>
+
+    <div class="form-container">
+        <h1>Formulario para ecuaciones</h1>
+        <form id="inputForm" method="POST" action="/resultados">
+            <div class="form-group">
+                <input type="number" id="ex" name="ex" step="any" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                x
+                <span id="sign1"></span>
+                <input type="number" id="ey" name="ey" step="1" placeholder="Valor por el que se multiplica y" required oninput="validateNonZero(this)">
+                y =
+                <input type="number" id="er" name="er" step="1" placeholder="Resultado de la primer ecuación" required >
+                <input type="hidden" id="ey_sign" name="ey_sign">
+            </div>
+            <div class="form-group">
+                <input type="number" id="ex1" name="ex1" step="1" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                x
+                <span id="sign2"></span>
+                <input type="number" id="ey1" name="ey1" step="1" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                y =
+                <input type="number" id="er1" name="er1" step="1" placeholder="Resultado de la segunda ecuación" required >
+                <input type="hidden" id="ey1_sign" name="ey1_sign">
+            </div>
+            <div class="form-group">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+
+        <span id="Resultados"></span>
+
+        <span id="Comprobacion"></span>
+        
+    </div>
+
+    <script>
+        // Función para actualizar el signo dinámicamente
+        function updateSign(input, signElement, hiddenInput) {
+            let value = parseFloat(input.value);
+            if (!isNaN(value)) {
+                if (value > 0) {
+                    signElement.textContent = '+';
+                    hiddenInput.value = '+';
+                } else if (value < 0) {
+                    signElement.textContent = '-';
+                    hiddenInput.value = '-';
+                } else {
+                    signElement.textContent = ''; // Si es 0, no se muestra signo
+                    hiddenInput.value = '';
+                }
+            }
+        }
+
+        // Asigna eventos de escucha para actualizar el signo dinámicamente
+        document.getElementById('ey').addEventListener('input', function() {
+            updateSign(this, document.getElementById('sign1'), document.getElementById('ey_sign'));
+        });
+        document.getElementById('ey1').addEventListener('input', function() {
+            updateSign(this, document.getElementById('sign2'), document.getElementById('ey1_sign'));
+        });
+
+        // Configurar WebSocket para recibir los datos desde el servidor
+        const socket = io();
+
+        socket.on('resultados', function(data) {
+            if (data.x === null || data.y === null) {
+                alert('No tiene solución');
+            } else {
+                document.getElementById('Resultados').innerHTML = `
+                    <h2>Resultados</h2>
+                    <p><b>Primera ecuación:</b> ${data.ex}x ${data.ey_sign} ${Math.abs(data.ey)}y = ${data.er}</p>
+                    <p><b>Segunda ecuación:</b> ${data.ex1}x ${data.ey1_sign} ${Math.abs(data.ey1)}y = ${data.er1}</p>
+                    <p><b>Decimales (x, y):</b> (${data.x}, ${data.y})</p>
+                    <p><b>Fracciones (x, y):</b> (${data.xf}, ${data.yf})</p>
+                `;
+                document.getElementById('Comprobacion').innerHTML = `
+                    <h2>Comprobacion</h2>
+                    <p><b>Primera ecuación:</b> ${data.ex}(${data.xf}) + ${data.ey}(${data.yf}) = ${data.er}</p>
+                    <p><b>Primera ecuación:</b> ${data.ecua1} + ${data.ecua12} = ${data.er}</p>
+                    <a><b>Resultado primera ecuación (decimal): </b>${data.ecua12f} </a> || <a><b>Resultado primera ecuación (entero): </b>${data.ecua12f_int} </a>
+                    
+                    <p><b>Segunda ecuación:</b> ${data.ex1}(${data.xf}) + ${data.ey1}(${data.yf}) = ${data.er1}</p>
+                    <p><b>Segunda ecuación:</b> ${data.ecua1} + ${data.ecua12} = ${data.er1}</p>
+                    <a><b>Resultado segunda ecuación (decimal): </b>${data.ecua22f} </a> || <a><b>Resultado segunda ecuación (entero): </b>${data.ecua22f_int} </a>
+                `;
+            }
+        });
+    </script>
+
+</body>
+</html>
