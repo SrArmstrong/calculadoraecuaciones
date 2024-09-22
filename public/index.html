@@ -19,31 +19,106 @@
         }
         </script>
 
+<script>
+    // Función para convertir fracción a decimal
+    function fractionToDecimal(fraction) {
+        if (fraction.includes("/")) {
+            const parts = fraction.split("/");
+            const numerator = parseFloat(parts[0]);
+            const denominator = parseFloat(parts[1]);
+            if (isNaN(numerator) || isNaN(denominator) || denominator === 0) {
+                return NaN; // Si la fracción es inválida o el denominador es 0
+            }
+            return numerator / denominator;
+        }
+        return parseFloat(fraction); // Si no es una fracción, devolver el número tal cual
+    }
+
+    // Función para validar y convertir los valores de los inputs
+    function convertFractionInputs() {
+        const inputs = ['ex', 'ey', 'er', 'ex1', 'ey1', 'er1'];
+        let valid = true;
+
+        inputs.forEach(inputId => {
+            const inputElement = document.getElementById(inputId);
+            const value = inputElement.value.trim();
+            const decimalValue = fractionToDecimal(value);
+
+            if (isNaN(decimalValue)) {
+                alert(`El valor ingresado en ${inputId} es inválido.`);
+                valid = false;
+            } else {
+                inputElement.value = decimalValue; // Actualizar el input con el valor decimal
+            }
+        });
+
+        return valid; // Retorna true si todo es válido, o false si algún valor es inválido
+    }
+
+    // Restricción para permitir solo números, decimales, "-", y "/"
+    function allowOnlyValidCharacters(event) {
+        const key = event.key;
+        const value = event.target.value;
+
+        const allowedCharacters = "0123456789./-"; // Caracteres permitidos
+        const isFirstCharacter = value.length === 0;
+
+        // Permitir "-" solo como primer carácter
+        if (key === "-" && !isFirstCharacter) {
+            event.preventDefault(); // Bloquear "-" si no es el primer carácter
+        }
+
+        if (!allowedCharacters.includes(key)) {
+            event.preventDefault(); // Bloquear caracteres no permitidos
+        }
+    }
+
+    // Agregar el evento de keypress a los inputs para restringir caracteres
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputIds = ['ex', 'ey', 'er', 'ex1', 'ey1', 'er1'];
+
+        inputIds.forEach(inputId => {
+            const inputElement = document.getElementById(inputId);
+            inputElement.addEventListener('keypress', allowOnlyValidCharacters);
+        });
+    });
+
+    // Interceptar el envío del formulario para realizar la conversión
+    document.getElementById('inputForm').addEventListener('submit', function(event) {
+        if (!convertFractionInputs()) {
+            event.preventDefault(); // Evita que el formulario se envíe si hay algún error
+        }
+    });
+</script>
+
+
     <div class="form-container">
         <h1>Formulario para ecuaciones</h1>
+        <h5 style="color:red;">Ingresa números enteros, decimales e incluso fracciones (Para las fracciones utiliza / entre números), al igual que números positivos y negativos.</h5>
         <form id="inputForm" method="POST" action="/resultados">
             <div class="form-group">
-                <input type="number" id="ex" name="ex" step="any" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                <input type="text" id="ex" name="ex" placeholder="Primer valor ecuación 1" required>
                 x
                 <span id="sign1"></span>
-                <input type="number" id="ey" name="ey" step="1" placeholder="Valor por el que se multiplica y" required oninput="validateNonZero(this)">
+                <input type="text" id="ey" name="ey" placeholder="Segundo valor ecuación 1" required>
                 y =
-                <input type="number" id="er" name="er" step="1" placeholder="Resultado de la primer ecuación" required >
+                <input type="text" id="er" name="er" placeholder="Resultado ecuación 1" required>
                 <input type="hidden" id="ey_sign" name="ey_sign">
             </div>
             <div class="form-group">
-                <input type="number" id="ex1" name="ex1" step="1" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                <input type="text" id="ex1" name="ex1" placeholder="Primer valor ecuación 2" required>
                 x
                 <span id="sign2"></span>
-                <input type="number" id="ey1" name="ey1" step="1" placeholder="Valor por el que se multiplica X" required oninput="validateNonZero(this)">
+                <input type="text" id="ey1" name="ey1" placeholder="Segundo valor ecuación 2" required>
                 y =
-                <input type="number" id="er1" name="er1" step="1" placeholder="Resultado de la segunda ecuación" required >
+                <input type="text" id="er1" name="er1" placeholder="Resultado ecuación 2" required>
                 <input type="hidden" id="ey1_sign" name="ey1_sign">
             </div>
             <div class="form-group">
                 <button type="submit">Submit</button>
             </div>
         </form>
+        
 
         <span id="Resultados"></span>
 
@@ -95,11 +170,17 @@
                     <h2>Comprobacion</h2>
                     <p><b>Primera ecuación:</b> ${data.ex}(${data.xf}) + ${data.ey}(${data.yf}) = ${data.er}</p>
                     <p><b>Primera ecuación:</b> ${data.ecua1} + ${data.ecua12} = ${data.er}</p>
-                    <a><b>Resultado primera ecuación (decimal): </b>${data.ecua12f} </a> || <a><b>Resultado primera ecuación (entero): </b>${data.ecua12f_int} </a>
+                    <a><b>Resultado primera ecuación (decimal): </b>${data.ecua12f} </a></br>
+                    ||</br>
+                    <a><b>Resultado primera ecuación (entero): </b>${data.ecua12f_int} </a>
                     
                     <p><b>Segunda ecuación:</b> ${data.ex1}(${data.xf}) + ${data.ey1}(${data.yf}) = ${data.er1}</p>
                     <p><b>Segunda ecuación:</b> ${data.ecua1} + ${data.ecua12} = ${data.er1}</p>
-                    <a><b>Resultado segunda ecuación (decimal): </b>${data.ecua22f} </a> || <a><b>Resultado segunda ecuación (entero): </b>${data.ecua22f_int} </a>
+                    <a><b>Resultado segunda ecuación (decimal): </b>${data.ecua22f} </a></br>
+                    ||</br>
+                    <a><b>Resultado segunda ecuación (entero): </b>${data.ecua22f_int} </a>
+                    </br>
+                    <h5 style="color:red;">Si deseas ingresar otros números para la ecuación solamente vuelve a ingresar datos en cada espacio.</h5>
                 `;
             }
         });
